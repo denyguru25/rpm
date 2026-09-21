@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Rencana Pembelajaran Mendalam (Deep Learning)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; color: black; font-size: 12pt; }
+            .card-box { border: none !important; shadow: none !important; padding: 0 !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 min-h-screen flex flex-col">
+
+    <!-- HEADER / NAVBAR -->
+    <header class="bg-indigo-700 text-white shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i data-lucide="book-open-check" class="w-8 h-8 text-amber-300"></i>
+                <div>
+                    <h1 class="text-xl font-bold leading-tight">RPP Mendalam AI</h1>
+                    <p class="text-xs text-indigo-200">Generator Rencana Pembelajaran & LKPD Berbasis Gemini API</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button id="btnApiKey" onclick="openApiKeyModal()" class="flex items-center space-x-2 bg-indigo-800 hover:bg-indigo-900 px-3 py-1.5 rounded-lg text-xs font-medium transition shadow-sm border border-indigo-600">
+                    <i data-lucide="key" class="w-4 h-4 text-amber-400"></i>
+                    <span id="apiKeyStatus">Atur API Key</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- FORM SECTION (LEFT COLUMN) -->
+        <section class="lg:col-span-5 space-y-6 no-print">
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-5">
+                <h2 class="text-lg font-bold text-indigo-900 border-b border-slate-100 pb-2 flex items-center gap-2">
+                    <i data-lucide="sliders" class="w-5 h-5 text-indigo-600"></i>
+                    Identitas & Parameter
+                </h2>
+
+                <!-- Identitas Dasar -->
+                <div class="grid grid-cols-1 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Mata Pelajaran</label>
+                        <input type="text" id="mapel" placeholder="Contoh: Bahasa Indonesia, Matematika" class="w-full text-sm p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Kelas / Fase</label>
+                            <input type="text" id="kelas" placeholder="Contoh: Kelas 5 / Fase C" class="w-full text-sm p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Materi Pokok</label>
+                            <input type="text" id="materi" placeholder="Contoh: Pengukuran Sudut" class="w-full text-sm p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                    </div>
+                    
+                    <!-- Kalkulator JP -->
+                    <div class="grid grid-cols-2 gap-3 bg-indigo-50/50 p-3 rounded-lg border border-indigo-100">
+                        <div>
+                            <label class="block text-xs font-semibold text-indigo-900 mb-1">Total JP</label>
+                            <input type="number" id="totalJp" value="6" min="1" oninput="calculateJp()" class="w-full text-sm p-2 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-indigo-900 mb-1">Jumlah Pertemuan</label>
+                            <input type="number" id="jumlahPertemuan" value="2" min="1" oninput="calculateJp()" class="w-full text-sm p-2 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                        <div class="col-span-2 text-xs text-indigo-700 font-medium pt-1 flex justify-between items-center">
+                            <span>Estimasi per Pertemuan:</span>
+                            <span id="calcResult" class="font-bold bg-indigo-200 px-2 py-0.5 rounded text-indigo-900">3 JP (105 Menit)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profil Lulusan Multi-select -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-semibold text-slate-600">Profil Lulusan</label>
+                        <label class="inline-flex items-center gap-1.5 text-xs text-indigo-600 cursor-pointer">
+                            <input type="checkbox" id="aiSelectProfil" onchange="toggleAiProfil()" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                            <span>AI yang pilihkan</span>
+                        </label>
+                    </div>
+                    <div id="profilContainer" class="flex flex-wrap gap-1.5 pt-1">
+                        <!-- Chips populated by JS -->
+                    </div>
+                </div>
+
+                <!-- TP & KKTP -->
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Tujuan Pembelajaran (TP) - Level C3-C6</label>
+                        <textarea id="tpInput" rows="2" placeholder="Contoh: Peserta didik dapat menganalisis dan mengukur besaran sudut pada bangun datar menggunakan busur derajat." class="w-full text-sm p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">KKTP / Indikator Ketercapaian</label>
+                        <textarea id="kktpInput" rows="2" placeholder="Masukkan indikator penilai (AI akan menyesuaikan tangga sintak dari C1 ke C4 jika diperlukan)." class="w-full text-sm p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                    </div>
+                </div>
+
+                <!-- Karakter Murid -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Karakter & Profil Belajar Murid (Opsional)</label>
+                    <textarea id="karakterMurid" rows="2" placeholder="Contoh: Kesiapan belajar beragam, 40% kinestetik, menyukai game interaktif. (Kosongkan jika ingin dibuatkan asumsi umum oleh AI)." class="w-full text-sm p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                </div>
+
+                <!-- Kerangka Pembelajaran Mendalam (4 Pilar) -->
+                <div class="space-y-3 border-t border-slate-100 pt-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Kerangka Pembelajaran (4 Pilar)</h3>
+                    
+                    <!-- Praktik Pedagogis -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Praktik Pedagogis / Model</label>
+                        <select id="pedagogis" onchange="togglePedagogisLainnya()" class="w-full text-sm p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="AI">Pilihkan oleh AI (Direkomendasikan)</option>
+                            <option value="PBL">Problem-Based Learning (PBL)</option>
+                            <option value="PjBL">Project-Based Learning (PjBL)</option>
+                            <option value="Inquiry">Inquiry-Based Learning</option>
+                            <option value="Diferensiasi">Pembelajaran Berdiferensiasi & TaRL</option>
+                            <option value="Lainnya">Model Lainnya...</option>
+                        </select>
+                        <input type="text" id="pedagogisLainnya" placeholder="Sebutkan model pembelajaran..." class="hidden mt-2 w-full text-sm p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+
+                    <!-- Lingkungan Belajar -->
+                    <div class="grid grid-cols-1 gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                        <span class="text-xs font-semibold text-slate-700">Lingkungan Belajar:</span>
+                        <input type="text" id="ruangFisik" placeholder="Ruang Fisik (misal: Ruang Kelas, Halaman Sekolah)" class="text-sm p-1.5 border border-slate-300 rounded bg-white">
+                        <input type="text" id="ruangVirtual" placeholder="Ruang Virtual (misal: Google Classroom, Quizizz)" class="text-sm p-1.5 border border-slate-300 rounded bg-white">
+                        <input type="text" id="budayaBelajar" placeholder="Budaya Belajar (misal: Kolaboratif, Bernalar Kritis)" class="text-sm p-1.5 border border-slate-300 rounded bg-white">
+                    </div>
+
+                    <!-- Kemitraan -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Kemitraan Pembelajaran (Opsional)</label>
+                        <input type="text" id="kemitraan" placeholder="Contoh: Orang tua sebagai pendamping, Komunitas Lokal" class="w-full text-sm p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+
+                    <!-- Pemanfaatan Digital -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-semibold text-slate-600">Fasilitas Digital Tersedia?</label>
+                        <div class="flex items-center space-x-4">
+                            <label class="inline-flex items-center text-xs text-slate-700">
+                                <input type="radio" name="digitalAvail" value="Ya" onchange="toggleDigitalLinks()" class="text-indigo-600">
+                                <span class="ml-1.5">Ya (Internet/Proyektor/IFP)</span>
+                            </label>
+                            <label class="inline-flex items-center text-xs text-slate-700">
+                                <input type="radio" name="digitalAvail" value="Tidak" onchange="toggleDigitalLinks()" checked class="text-indigo-600">
+                                <span class="ml-1.5">Tidak Ada</span>
+                            </label>
+                        </div>
+                        <div id="digitalLinksContainer" class="hidden pt-1">
+                            <input type="text" id="digitalLinks" placeholder="Sisipkan Link Media/Video (pisahkan dengan koma)" class="w-full text-sm p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUBMIT BUTTON -->
+                <button id="btnGenerateRpp" onclick="generateRPP()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md transition duration-200 flex items-center justify-center space-x-2">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-amber-300"></i>
+                    <span>Generate RPP Mendalam</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- OUTPUT SECTION (RIGHT COLUMN) -->
+        <section class="lg:col-span-7 flex flex-col space-y-4">
+            <!-- Toolbar Output -->
+            <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-2 no-print">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="file-text" class="w-5 h-5 text-indigo-600"></i>
+                    <span class="text-sm font-bold text-slate-700">Hasil Rencana Pembelajaran</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="copyOutput()" class="flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium transition">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                        <span>Salin Teks</span>
+                    </button>
+                    <button onclick="exportToWord()" class="flex items-center space-x-1 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-medium transition">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span>Ekspor Word</span>
+                    </button>
+                    <button onclick="openLkpdModal()" class="flex items-center space-x-1 bg-amber-50 hover:bg-amber-100 text-amber-800 px-3 py-1.5 rounded-lg text-xs font-medium transition border border-amber-200">
+                        <i data-lucide="file-plus" class="w-4 h-4 text-amber-600"></i>
+                        <span>Buat LKPD</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Output Display Container -->
+            <div class="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-sm flex-grow min-h-[500px] overflow-y-auto card-box relative">
+                <!-- Loading Indicator -->
+                <div id="loadingState" class="hidden absolute inset-0 bg-white/90 z-10 flex flex-col items-center justify-center space-y-3 p-4">
+                    <div class="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                    <p class="text-sm font-medium text-indigo-900 animate-pulse text-center">Merancang Pembelajaran Mendalam berbasis AI...</p>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="h-full flex flex-col items-center justify-center text-center text-slate-400 py-16 space-y-3">
+                    <i data-lucide="cpu" class="w-12 h-12 text-slate-300"></i>
+                    <p class="text-sm">Isi formulir di sebelah kiri dan klik <strong>Generate RPP Mendalam</strong> untuk melihat hasil rancangan.</p>
+                </div>
+
+                <!-- Rendered Markdown Content -->
+                <div id="rppOutput" class="prose prose-indigo max-w-none text-slate-800 text-sm leading-relaxed hidden"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL 1: API KEY SETTING -->
+    <div id="modalApiKey" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-xl shadow-xl border border-slate-200 max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="key" class="w-5 h-5 text-amber-500"></i>
+                    Atur Gemini API Key
+                </h3>
+                <button onclick="closeApiKeyModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-600">
+                API Key diperlukan untuk terhubung ke Google Gemini. Kunci ini disimpan secara aman di browser local storage Anda dan tidak dikirim ke server manapun.
+            </p>
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Gemini API Key</label>
+                <input type="password" id="inputApiKey" placeholder="AIzaSy..." class="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+            <div class="flex items-center justify-between pt-2">
+                <button onclick="clearApiKey()" class="text-xs text-red-600 hover:underline">Hapus Key Tersimpan</button>
+                <div class="space-x-2">
+                    <button onclick="closeApiKeyModal()" class="px-3 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
+                    <button onclick="saveApiKey()" class="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-sm">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: GENERATE LKPD -->
+    <div id="modalLkpd" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-xl shadow-xl border border-slate-200 max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="file-check" class="w-5 h-5 text-indigo-600"></i>
+                    Generate Lembar Kerja Peserta Didik (LKPD)
+                </h3>
+                <button onclick="closeLkpdModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-600">
+                Data diselaraskan otomatis dari formulir RPP. Anda dapat menyesuaikan petunjuk khusus sebelum membuat LKPD.
+            </p>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Judul / Aktivitas Utama LKPD</label>
+                    <input type="text" id="lkpdJudul" class="w-full text-sm p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Bentuk Instruksi / Tugas</label>
+                    <textarea id="lkpdInstruksi" rows="3" placeholder="Contoh: Buatlah eksplorasi kelompok pengukuran sudut menggunakan benda konkrit di sekitar kelas..." class="w-full text-sm p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 pt-3 border-t border-slate-100">
+                <button onclick="closeLkpdModal()" class="px-3 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
+                <button onclick="generateLKPD()" class="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-sm flex items-center gap-1.5">
+                    <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i>
+                    <span>Generate LKPD</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT CORE LOGIC -->
+    <script>
+        // Data Options Profil Lulusan
+        const PROFIL_OPTIONS = [
+            "Beriman & Bertakwa", "Berkebinekaan Global", "Gotong Royong",
+            "Mandiri", "Bernalar Kritis", "Kreatif",
+            "Komunikatif", "Karakter Tangguh"
+        ];
+        let selectedProfil = [];
+
+        // Application State
+        let apiKey = localStorage.getItem('gemini_api_key') || '';
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            renderProfilChips();
+            calculateJp();
+            updateApiKeyStatus();
+            if (!apiKey) {
+                openApiKeyModal();
+            }
+        });
+
+        // UI Helpers
+        function updateApiKeyStatus() {
+            const statusEl = document.getElementById('apiKeyStatus');
+            if (apiKey) {
+                statusEl.textContent = 'API Key Terhubung';
+                statusEl.classList.add('text-emerald-300');
+            } else {
+                statusEl.textContent = 'Atur API Key';
+                statusEl.classList.remove('text-emerald-300');
+            }
+        }
+
+        function openApiKeyModal() {
+            document.getElementById('inputApiKey').value = apiKey;
+            document.getElementById('modalApiKey').classList.remove('hidden');
+        }
+
+        function closeApiKeyModal() {
+            document.getElementById('modalApiKey').classList.add('hidden');
+        }
+
+        function saveApiKey() {
+            const val = document.getElementById('inputApiKey').value.trim();
+            if (val) {
+                apiKey = val;
+                localStorage.setItem('gemini_api_key', apiKey);
+                updateApiKeyStatus();
+                closeApiKeyModal();
+            } else {
+                alert('Silakan masukkan API Key Gemini.');
+            }
+        }
+
+        function clearApiKey() {
+            localStorage.removeItem('gemini_api_key');
+            apiKey = '';
+            document.getElementById('inputApiKey').value = '';
+            updateApiKeyStatus();
+            closeApiKeyModal();
+        }
+
+        // Render Chips Profil Lulusan
+        function renderProfilChips() {
+            const container = document.getElementById('profilContainer');
+            container.innerHTML = '';
+            PROFIL_OPTIONS.forEach(item => {
+                const isSelected = selectedProfil.includes(item);
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = `text-xs px-2.5 py-1 rounded-full border transition ${
+                    isSelected 
+                    ? 'bg-indigo-600 text-white border-indigo-600 font-medium' 
+                    : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                }`;
+                chip.textContent = item;
+                chip.onclick = () => toggleProfil(item);
+                container.appendChild(chip);
+            });
+        }
+
+        function toggleProfil(item) {
+            if (document.getElementById('aiSelectProfil').checked) return;
+            if (selectedProfil.includes(item)) {
+                selectedProfil = selectedProfil.filter(p => p !== item);
+            } else {
+                selectedProfil.push(item);
+            }
+            renderProfilChips();
+        }
+
+        function toggleAiProfil() {
+            const isChecked = document.getElementById('aiSelectProfil').checked;
+            if (isChecked) {
+                selectedProfil = [];
+                renderProfilChips();
+            }
+        }
+
+        // Calculation Helpers
+        function calculateJp() {
+            const total = parseInt(document.getElementById('totalJp').value) || 0;
+            const pertemuan = parseInt(document.getElementById('jumlahPertemuan').value) || 1;
+            const avgJp = (total / pertemuan).toFixed(1);
+            const totalMinutes = Math.round((total * 35) / pertemuan);
+            document.getElementById('calcResult').textContent = `${avgJp} JP (~${totalMinutes} Menit)`;
+        }
+
+        function togglePedagogisLainnya() {
+            const val = document.getElementById('pedagogis').value;
+            const inputLainnya = document.getElementById('pedagogisLainnya');
+            if (val === 'Lainnya') {
+                inputLainnya.classList.remove('hidden');
+            } else {
+                inputLainnya.classList.add('hidden');
+            }
+        }
+
+        function toggleDigitalLinks() {
+            const isYa = document.querySelector('input[name="digitalAvail"]:checked').value === 'Ya';
+            const container = document.getElementById('digitalLinksContainer');
+            if (isYa) {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        // Custom Markdown Parser to HTML with URL Auto-linking
+        function parseMarkdown(text) {
+            let html = text
+                // Headers
+                .replace(/^### (.*$)/gim, '<h3 class="text-base font-bold text-indigo-900 mt-4 mb-2">$1</h3>')
+                .replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold text-indigo-900 border-b border-indigo-100 pb-1 mt-6 mb-3">$1</h2>')
+                .replace(/^# (.*$)/gim, '<h1 class="text-xl font-bold text-indigo-950 border-b-2 border-indigo-200 pb-2 mb-4">$1</h1>')
+                // Bold & Italic
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                // Lists
+                .replace(/^\s*\-\s*(.*$)/gim, '<li class="ml-4 list-disc">$1</li>')
+                .replace(/^\s*\d+\.\s*(.*$)/gim, '<li class="ml-4 list-decimal">$1</li>')
+                // Blockquotes
+                .replace(/^\>(.*$)/gim, '<blockquote class="border-l-4 border-indigo-500 pl-3 italic text-slate-600 my-2">$1</blockquote>');
+
+            // Auto-link URLs
+            const urlRegex = /(https?:\/\/[^\s<]+)/g;
+            html = html.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-indigo-600 font-semibold underline hover:text-indigo-800">$1</a>');
+
+            // Paragraph wrapping
+            return html.split('\n\n').map(p => {
+                if (p.trim().startsWith('<h') || p.trim().startsWith('<li') || p.trim().startsWith('<blockquote')) {
+                    return p;
+                }
+                return `<p class="mb-2 leading-relaxed">${p}</p>`;
+            }).join('');
+        }
+
+        // API Call to Gemini REST API
+        async function callGeminiApi(promptText) {
+            if (!apiKey) {
+                openApiKeyModal();
+                throw new Error("API Key belum dikonfigurasi.");
+            }
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{ text: promptText }]
+                    }],
+                    generationConfig: {
+                        maxOutputTokens: 8192,
+                        temperature: 0.7
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                if (response.status === 429) {
+                    throw new Error("Batas kuota gratis terlampaui (Rate Limit). Mohon tunggu 30-60 detik.");
+                }
+                throw new Error(errData.error?.message || `Gagal menghubungi API Gemini (Status: ${response.status})`);
+            }
+
+            const data = await response.json();
+            return data.candidates[0].content.parts[0].text;
+        }
+
+        // Generate RPP Execution
+        async function generateRPP() {
+            const mapel = document.getElementById('mapel').value.trim();
+            const kelas = document.getElementById('kelas').value.trim();
+            const materi = document.getElementById('materi').value.trim();
+            const totalJp = document.getElementById('totalJp').value;
+            const jumlahPertemuan = document.getElementById('jumlahPertemuan').value;
+            const tp = document.getElementById('tpInput').value.trim();
+
+            if (!mapel || !kelas || !materi || !tp) {
+                alert("Mohon lengkapi Mata Pelajaran, Kelas, Materi, dan Tujuan Pembelajaran (TP).");
+                return;
+            }
+
+            const aiProfilChecked = document.getElementById('aiSelectProfil').checked;
+            const profilText = aiProfilChecked ? "Pilihkan Profil Lulusan yang paling relevan secara rasional." : selectedProfil.join(', ');
+            
+            let modelPedagogis = document.getElementById('pedagogis').value;
+            if (modelPedagogis === 'Lainnya') {
+                modelPedagogis = document.getElementById('pedagogisLainnya').value;
+            }
+
+            const digitalAvail = document.querySelector('input[name="digitalAvail"]:checked').value;
+            const digitalLinks = document.getElementById('digitalLinks').value.trim();
+
+            const prompt = `
+Bertindaklah sebagai Ahli Kurikulum & Pengembang Pembelajaran Mendalam (Deep Learning) Kurikulum Merdeka.
+Buatlah Rencana Pembelajaran Mendalam (RPP) yang rinci, terstruktur, dan utuh berdasarkan parameter berikut:
+
+**IDENTITAS PEMBELAJARAN:**
+- Mata Pelajaran: ${mapel}
+- Kelas / Fase: ${kelas}
+- Materi Pokok: ${materi}
+- Alokasi Waktu: Total ${totalJp} JP (${jumlahPertemuan} Pertemuan)
+- Profil Lulusan (Pancasila): ${profilText || 'Otomatis pilihkan'}
+
+**CAPAIAN & INDIKATOR:**
+- Tujuan Pembelajaran (TP): ${tp}
+- KKTP / Indikator: ${document.getElementById('kktpInput').value.trim() || 'Buatlah indikator berjenjang dari pemahaman awal (C1-C2) hingga penerapan/analisis (C4-C6)'}
+- Karakter / Profil Murid: ${document.getElementById('karakterMurid').value.trim() || 'Asumsikan keberagaman kemampuan umum peserta didik'}
+
+**KERANGKA PEMBELAJARAN MENDALAM (4 PILAR):**
+- Praktik Pedagogis: ${modelPedagogis}
+- Lingkungan Belajar: 
+  * Ruang Fisik: ${document.getElementById('ruangFisik').value || 'Sesuai konteks kelas'}
+  * Ruang Virtual: ${document.getElementById('ruangVirtual').value || 'Sesuai ketersediaan'}
+  * Budaya Belajar: ${document.getElementById('budayaBelajar').value || 'Kolaboratif, bernalar kritis, aman'}
+- Kemitraan Pembelajaran: ${document.getElementById('kemitraan').value || 'Interaksi guru, murid, dan lingkungan sekitar'}
+- Pemanfaatan Digital: Ketersediaan (${digitalAvail}). Link Media: ${digitalLinks || 'Tidak ada'}
+
+---
+**INSTRUKSI STRUKTUR OUTPUT RPP:**
+Hasilkan output RPP lengkap menggunakan format Markdown yang rapi dengan struktur:
+# RENCANA PEMBELAJARAN MENDALAM (DEEP LEARNING)
+## I. IDENTITAS & PROFIL PEMBELAJARAN
+## II. TUJUAN & TANGGA KETERCAPAIAN (KKTP)
+## III. KERANGKA 4 PILAR PEMBELAJARAN MENDALAM
+## IV. SKENARIO PEMBELAJARAN PER PERTEMUAN (Kegiatan Awal, Inti - Bermakna & Mendalam, Kegiatan Penutup)
+## V. ASESMEN PEMBELAJARAN (Sesuai Praktik Pedagogis: Formatif & Sumatif)
+## VI. REFERENSI LKPD & MEDIA (Sebutkan rujukan singkat LKPD dan integrasikan link media digital jika disediakan di bagian kegiatan relevan).
+
+Pastikan skenario kegiatan inti menginternalisasikan nilai pembelajaran mendalam (*Mindful, Meaningful, Joyful Learning*).
+            `;
+
+            // UI Loading state
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('rppOutput').classList.add('hidden');
+
+            try {
+                const resultText = await callGeminiApi(prompt);
+                const renderedHtml = parseMarkdown(resultText);
+                
+                const outputEl = document.getElementById('rppOutput');
+                outputEl.innerHTML = renderedHtml;
+                outputEl.classList.remove('hidden');
+
+                // Pre-fill LKPD Modal Defaults
+                document.getElementById('lkpdJudul').value = `LKPD: ${materi} - (${mapel})`;
+                document.getElementById('lkpdInstruksi').value = `Aktivitas eksplorasi berdasarkan TP: ${tp}`;
+
+            } catch (err) {
+                alert(`Terjadi Kesalahan: ${err.message}`);
+                document.getElementById('emptyState').classList.remove('hidden');
+            } finally {
+                document.getElementById('loadingState').classList.add('hidden');
+            }
+        }
+
+        // Generate LKPD
+        function openLkpdModal() {
+            const rppContent = document.getElementById('rppOutput').innerText;
+            if (!rppContent) {
+                alert("Silakan generate RPP terlebih dahulu.");
+                return;
+            }
+            document.getElementById('modalLkpd').classList.remove('hidden');
+        }
+
+        function closeLkpdModal() {
+            document.getElementById('modalLkpd').classList.add('hidden');
+        }
+
+        async function generateLKPD() {
+            const judul = document.getElementById('lkpdJudul').value;
+            const instruksi = document.getElementById('lkpdInstruksi').value;
+            const mapel = document.getElementById('mapel').value;
+            const kelas = document.getElementById('kelas').value;
+
+            const prompt = `
+Buatlah Lembar Kerja Peserta Didik (LKPD) yang interaktif, berstruktur pembelajaran mendalam, dan siap cetak berdasarkan data berikut:
+- Judul Aktivitas: ${judul}
+- Mata Pelajaran: ${mapel} (${kelas})
+- Instruksi/Fokus Pembelajaran: ${instruksi}
+
+Gunakan format Markdown yang rapi meliputi:
+# LEMBAR KERJA PESERTA DIDIK (LKPD)
+### Nama Kelompok/Siswa:
+### Kelas / Fase:
+### Tujuan Aktivitas:
+
+---
+### A. PETUNJUK KERJA
+### B. Apersepsi & Pertanyaan Pemantik
+### C. Langkah Kegiatan Eksplorasi / Problem Solving
+### D. Lembar Hasil / Tabel Kerja (Gunakan format teks rapi/tabel)
+### E. Refleksi Mandiri Murid
+            `;
+
+            closeLkpdModal();
+            document.getElementById('loadingState').classList.remove('hidden');
+
+            try {
+                const resultText = await callGeminiApi(prompt);
+                const renderedHtml = parseMarkdown(resultText);
+                
+                const outputEl = document.getElementById('rppOutput');
+                outputEl.innerHTML += `<hr class="my-8 border-2 border-indigo-200 no-print" />` + renderedHtml;
+                
+            } catch (err) {
+                alert(`Gagal membuat LKPD: ${err.message}`);
+            } finally {
+                document.getElementById('loadingState').classList.add('hidden');
+            }
+        }
+
+        // Export Functions
+        function copyOutput() {
+            const text = document.getElementById('rppOutput').innerText;
+            if (!text) {
+                alert("Belum ada teks untuk disalin.");
+                return;
+            }
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Hasil RPP berhasil disalin ke clipboard!");
+            });
+        }
+
+        function exportToWord() {
+            const content = document.getElementById('rppOutput').innerHTML;
+            if (!content) {
+                alert("Belum ada dokumen untuk diekspor.");
+                return;
+            }
+
+            const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' " +
+                "xmlns:w='urn:schemas-microsoft-com:office:word' " +
+                "xmlns='http://www.w3.org/TR/REC-html40'>" +
+                "<head><meta charset='utf-8'><title>RPP Mendalam</title>" +
+                "<style>body{font-family:Arial, sans-serif; font-size:11pt; line-height:1.5;}</style>" +
+                "</head><body>";
+            const footer = "</body></html>";
+            const sourceHTML = header + content + footer;
+
+            const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
+            const fileDownload = document.createElement("a");
+            document.body.appendChild(fileDownload);
+            fileDownload.href = source;
+            fileDownload.download = 'RPP_Pembelajaran_Mendalam.doc';
+            fileDownload.click();
+            document.body.removeChild(fileDownload);
+        }
+    </script>
+</body>
+</html>
