@@ -218,35 +218,55 @@
         </section>
     </main>
 
-    <!-- MODAL 1: API KEY SETTING -->
+<!-- MODAL 1: API KEY SETTING -->
     <div id="modalApiKey" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-xl shadow-xl border border-slate-200 max-w-md w-full p-6 space-y-4">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-md w-full p-6 space-y-4">
+            <!-- Header Modal -->
             <div class="flex justify-between items-center border-b border-slate-100 pb-3">
                 <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
                     <i data-lucide="key" class="w-5 h-5 text-amber-500"></i>
-                    Atur Gemini API Key
+                    Pengaturan API Key
                 </h3>
-                <button onclick="closeApiKeyModal()" class="text-slate-400 hover:text-slate-600">
+                <button onclick="closeApiKeyModal()" class="text-slate-400 hover:text-slate-600 transition">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <p class="text-xs text-slate-600">
-                API Key diperlukan untuk terhubung ke Google Gemini. Kunci ini disimpan secara aman di browser local storage Anda dan tidak dikirim ke server manapun.
+
+            <!-- Deskripsi -->
+            <p class="text-xs text-slate-500 leading-relaxed">
+                Masukkan Google Gemini API Key Anda. Kunci disimpan hanya di browser ini (localStorage) dan tidak dikirim ke server manapun selain Google.
             </p>
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Gemini API Key</label>
-                <input type="password" id="inputApiKey" placeholder="AIzaSy..." class="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+
+            <!-- Input Field & Fitur Tambahan -->
+            <div class="space-y-2">
+                <label class="block text-xs font-semibold text-slate-700">Gemini API Key</label>
+                <input type="password" id="inputApiKey" placeholder="AIzaSy..." class="w-full text-sm p-3 border border-indigo-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                
+                <div class="flex flex-col space-y-1.5 pt-1">
+                    <!-- Toggle Tampilkan Karakter -->
+                    <label class="inline-flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                        <input type="checkbox" id="toggleShowKey" onchange="toggleApiKeyVisibility()" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                        <span>Tampilkan karakter</span>
+                    </label>
+                    
+                    <!-- Link ke Google AI Studio -->
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-xs text-indigo-600 font-medium hover:underline pt-1">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                        <span>Dapatkan API Key gratis di Google AI Studio</span>
+                    </a>
+                </div>
             </div>
-            <div class="flex items-center justify-between pt-2">
-                <button onclick="clearApiKey()" class="text-xs text-red-600 hover:underline">Hapus Key Tersimpan</button>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+                <button onclick="clearApiKey()" class="text-xs text-red-600 hover:underline font-medium">Hapus Key Tersimpan</button>
                 <div class="space-x-2">
-                    <button onclick="closeApiKeyModal()" class="px-3 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
-                    <button onclick="saveApiKey()" class="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-sm">Simpan</button>
+                    <button onclick="closeApiKeyModal()" class="px-3.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition">Batal</button>
+                    <button onclick="saveApiKey()" class="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm transition">Simpan</button>
                 </div>
             </div>
         </div>
     </div>
-
     <!-- MODAL 2: GENERATE LKPD -->
     <div id="modalLkpd" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white rounded-xl shadow-xl border border-slate-200 max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
@@ -325,6 +345,12 @@
 
         function closeApiKeyModal() {
             document.getElementById('modalApiKey').classList.add('hidden');
+        }
+// Fungsi untuk mengintip/menyembunyikan karakter API Key
+        function toggleApiKeyVisibility() {
+            const input = document.getElementById('inputApiKey');
+            const isChecked = document.getElementById('toggleShowKey').checked;
+            input.type = isChecked ? 'text' : 'password';
         }
 
         function saveApiKey() {
